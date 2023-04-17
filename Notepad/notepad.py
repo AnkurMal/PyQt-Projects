@@ -1,16 +1,19 @@
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTextEdit, QMessageBox
-from PyQt6.QtGui import QAction, QKeySequence, QCloseEvent
+from PyQt6.QtGui import QAction, QKeySequence, QCloseEvent, QIcon
 from PyQt6.QtPrintSupport import QPrintDialog, QPrinter
 
 class MainWindow(QMainWindow):
         def __init__(self):
                 super().__init__()
                 self.filename = self.copy_name = self.f_name = self.data = ''
+
                 self.setWindowTitle("Notepad")
+                self.setStyleSheet('font-size: 14px')
+                self.setWindowIcon(QIcon("Notepad.png"))
+                self.setMinimumSize(1000, 550)
 
                 self.edit = QTextEdit()
-                self.setStyleSheet('font-size: 14px')
                 self.setCentralWidget(self.edit)
 
                 open_action = QAction('Open', self)
@@ -66,21 +69,22 @@ class MainWindow(QMainWindow):
                 edit_menu.addSeparator()
                 edit_menu.addAction(select_all_action)
 
-
         def open_file(self):
                 self.filename, adress = QFileDialog.getOpenFileName(self)
                 self.f_name = self.filename.split('/')[-1]
                 if self.filename:
-                        file_extension = self.f_name[-3:].upper()
-                        if file_extension=='PNG':
-                                QMessageBox.warning(self, 'Warning', f'Cannot open a {file_extension} file.')
+                        try:
+                                with open(self.filename, 'r') as f:
+                                        self.data = f.read()
+                                self.edit.setText(self.data)
+                                self.f_name = self.filename.split('/')[-1]
+                                self.setWindowTitle(f'Notepad ({self.f_name})')
+                                self.copy_name = self.filename
+                        except UnicodeDecodeError:
+                                file_extension = self.f_name[-3:].upper()
+                                QMessageBox.warning(self, 'Invalid file format', f'Cannot open a {file_extension} file.')
                                 self.f_name = ''
                                 return
-                        self.setWindowTitle(f'Notepad ({self.f_name})')
-                        self.copy_name = self.filename
-                        with open(self.filename, 'r') as f:
-                                self.data = f.read()
-                                self.edit.setText(self.data)
 
         def save_file(self, para=''):
                 if self.filename=='' or para=='save_as':
@@ -115,8 +119,10 @@ class MainWindow(QMainWindow):
                 elif button==QMessageBox.StandardButton.Discard:
                         QCoreApplication.exit()
                 event.ignore()
-           
-app = QApplication([])
-window = MainWindow()
-window.show()
-app.exec()
+
+if __name__=='__main__':    
+        app = QApplication([])
+        app.setStyle('Fusion')
+        window = MainWindow()
+        window.show()
+        app.exec()
