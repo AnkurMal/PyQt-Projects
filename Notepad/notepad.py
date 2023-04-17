@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
                         except UnicodeDecodeError:
                                 file_extension = self.f_name[-3:].upper()
                                 QMessageBox.warning(self, 'Invalid file format', f'Cannot open a {file_extension} file.')
-                                self.f_name = ''
+                                self.f_name = self.filename = ''
                                 return
 
         def save_file(self, para=''):
