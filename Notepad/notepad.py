@@ -71,7 +71,6 @@ class MainWindow(QMainWindow):
 
         def open_file(self):
                 self.filename, adress = QFileDialog.getOpenFileName(self)
-                self.f_name = self.filename.split('/')[-1]
                 if self.filename:
                         try:
                                 with open(self.filename, 'r') as f:
