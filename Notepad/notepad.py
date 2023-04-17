@@ -1,14 +1,16 @@
 from PyQt6.QtCore import QCoreApplication
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTextEdit
-from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTextEdit, QMessageBox
+from PyQt6.QtGui import QAction, QKeySequence, QCloseEvent
+from PyQt6.QtPrintSupport import QPrintDialog, QPrinter
 
 class MainWindow(QMainWindow):
         def __init__(self):
                 super().__init__()
-                self.filename, self.copy_name = '', ''
+                self.filename = self.copy_name = self.f_name = self.data = ''
                 self.setWindowTitle("Notepad")
 
                 self.edit = QTextEdit()
+                self.setStyleSheet('font-size: 14px')
                 self.setCentralWidget(self.edit)
 
                 open_action = QAction('Open', self)
@@ -25,7 +27,7 @@ class MainWindow(QMainWindow):
 
                 exit_action = QAction('Exit', self)
                 exit_action.setShortcut(QKeySequence('Ctrl+q'))
-                exit_action.triggered.connect(QCoreApplication.exit)
+                exit_action.triggered.connect(self.closeEvent)
 
                 self.cut_action = QAction('Cut', self)
                 self.cut_action.setShortcut(QKeySequence('Ctrl+x'))
@@ -43,17 +45,21 @@ class MainWindow(QMainWindow):
                 select_all_action.setShortcut(QKeySequence('Ctrl+a'))
                 select_all_action.triggered.connect(self.edit.selectAll)
 
+                print_action = QAction('Print', self)
+                print_action.setShortcut(QKeySequence('Ctrl+p'))
+                print_action.triggered.connect(self.print_out)
+
                 menu = self.menuBar()
 
                 file_menu = menu.addMenu('File')
                 file_menu.addAction(open_action)
                 file_menu.addAction(save_action)
                 file_menu.addAction(save_as_action)
+                file_menu.addAction(print_action)
                 file_menu.addSeparator()
                 file_menu.addAction(exit_action)
                 
                 edit_menu = menu.addMenu('Edit')
-                edit_menu.triggered.connect(lambda: self.decide())
                 edit_menu.addAction(self.cut_action)
                 edit_menu.addAction(self.copy_action)
                 edit_menu.addAction(paste_action)
@@ -62,33 +68,55 @@ class MainWindow(QMainWindow):
 
 
         def open_file(self):
-                self.filename, adress = QFileDialog.getOpenFileName(self, filter="Text files (*.txt)")
-                self.copy_name = self.filename
+                self.filename, adress = QFileDialog.getOpenFileName(self)
+                self.f_name = self.filename.split('/')[-1]
                 if self.filename:
+                        file_extension = self.f_name[-3:].upper()
+                        if file_extension=='PNG':
+                                QMessageBox.warning(self, 'Warning', f'Cannot open a {file_extension} file.')
+                                self.f_name = ''
+                                return
+                        self.setWindowTitle(f'Notepad ({self.f_name})')
+                        self.copy_name = self.filename
                         with open(self.filename, 'r') as f:
-                                self.edit.setText(f.read())
+                                self.data = f.read()
+                                self.edit.setText(self.data)
 
-        def save_file(self, para):
+        def save_file(self, para=''):
                 if self.filename=='' or para=='save_as':
-                        self.filename, adress = QFileDialog.getSaveFileName(self, filter="Text files (*.txt)")
+                        self.filename, adress = QFileDialog.getSaveFileName(self)
                 if self.filename:
+                        self.f_name = self.filename.split('/')[-1]
+                        self.setWindowTitle(f'Notepad ({self.f_name})')
+                        self.data = self.edit.toPlainText()
                         with open(self.filename, 'w') as f:
-                                f.write(self.edit.toPlainText())
+                                f.write(self.data)
                 else:
                         self.filename = self.copy_name
 
-        def action_state(self, d):
-                self.cut_action.setDisabled(d)
-                self.copy_action.setDisabled(d)
+        def print_out(self):
+                printer = QPrinter()
+                dialog = QPrintDialog(printer, self)
+                dialog.accepted.connect(lambda: self.edit.print(printer))
+                dialog.exec()
 
-        def decide(self):
-                if self.edit.toPlainText=='':
-                        self.action_state(d=True)
+        def closeEvent(self, event: QCloseEvent):
+                if self.data!=self.edit.toPlainText() and self.filename:
+                        button = QMessageBox.question(self, 'Save changes', f'Do you want to save changes to {self.f_name}?', 
+                                                     buttons= QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
+                elif self.filename=='' and self.edit.toPlainText():
+                        button = QMessageBox.question(self, 'Save changes', 'Do you want to save changes?', 
+                                                     buttons= QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
                 else:
-                        self.action_state(d=False)
-
+                        QCoreApplication.exit()
+                        return
+                if button==QMessageBox.StandardButton.Save:
+                        self.save_file()
+                elif button==QMessageBox.StandardButton.Discard:
+                        QCoreApplication.exit()
+                event.ignore()
+           
 app = QApplication([])
-
 window = MainWindow()
 window.show()
 app.exec()
