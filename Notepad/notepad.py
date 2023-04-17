@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
                                 self.setWindowTitle(f'Notepad ({self.f_name})')
                                 self.copy_name = self.filename
                         except UnicodeDecodeError:
-                                file_extension = self.f_name[-3:].upper()
+                                file_extension = self.f_name.split('.')[-1].upper()
                                 QMessageBox.warning(self, 'Invalid file format', f'Cannot open a {file_extension} file.')
                                 self.f_name = self.filename = ''
                                 return
