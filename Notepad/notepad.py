@@ -72,11 +72,11 @@ class MainWindow(QMainWindow):
         def open_file(self):
                 self.filename, adress = QFileDialog.getOpenFileName(self)
                 if self.filename:
+                        self.f_name = self.filename.split('/')[-1]
                         try:
                                 with open(self.filename, 'r') as f:
                                         self.data = f.read()
                                 self.edit.setText(self.data)
-                                self.f_name = self.filename.split('/')[-1]
                                 self.setWindowTitle(f'Notepad ({self.f_name})')
                                 self.copy_name = self.filename
                         except UnicodeDecodeError:
@@ -111,12 +111,11 @@ class MainWindow(QMainWindow):
                         button = QMessageBox.question(self, 'Save changes', 'Do you want to save changes?', 
                                                      buttons= QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
                 else:
-                        QCoreApplication.exit()
-                        return
+                        return QCoreApplication.exit()
                 if button==QMessageBox.StandardButton.Save:
                         self.save_file()
                 elif button==QMessageBox.StandardButton.Discard:
-                        QCoreApplication.exit()
+                        return QCoreApplication.exit()
                 event.ignore()
 
 if __name__=='__main__':    
