@@ -74,15 +74,17 @@ class MainWindow(QMainWindow):
                 if self.filename:
                         self.f_name = self.filename.split('/')[-1]
                         try:
-                                with open(self.filename, 'r') as f:
+                                with open(self.filename, 'r',) as f:
                                         self.data = f.read()
+                                self.check = 0
                                 self.edit.setText(self.data)
                                 self.setWindowTitle(f'Notepad ({self.f_name})')
                                 self.copy_name = self.filename
                         except UnicodeDecodeError:
                                 file_extension = self.f_name.split('.')[-1].upper()
                                 QMessageBox.warning(self, 'Invalid file format', f'Cannot open a {file_extension} file.')
-                                self.f_name = self.filename = ''
+                                self.filename = self.copy_name
+                                self.f_name = self.filename.split('/')[-1]
                                 return
 
         def save_file(self, para=''):
