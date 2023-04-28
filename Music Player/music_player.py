@@ -6,6 +6,10 @@ from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFont
 class MainWindow(QMainWindow):
         def __init__(self):
                 super().__init__()
+                self.setWindowTitle("Music Player")
+                self.setWindowIcon(QIcon('media_player.png'))
+                self.setMinimumSize(1000, 550)
+
                 height = 4
                 slider_style = f'''
                 QSlider {{
@@ -37,8 +41,6 @@ class MainWindow(QMainWindow):
                 self.check = 0
                 self.pause_time = 0
                 self.play_or_pause = 0
-                self.setWindowTitle("Music Player")
-                self.setMinimumSize(1000, 550)
 
                 self.play_pause_button = QPushButton()
                 self.play_pause_button.setIcon(QIcon('play_button.png'))
@@ -116,11 +118,12 @@ class MainWindow(QMainWindow):
 
         def play(self):
                 self.check = 0
-                self.media.play()
+                if self.play_or_pause == 1:
+                        self.media.play()
 
         def media_player(self):
                 if self.play_or_pause==0:
-                        self.play()
+                        self.media.play()
                         self.play_or_pause = 1
                         self.play_pause_button.setIcon(QIcon('pause_button.png'))
                 else:
@@ -136,6 +139,8 @@ class MainWindow(QMainWindow):
                 else:
                         self.left_time_label.setText(f"{minute}:{second}")
                 self.progress.setValue(self.media.position())
+                if self.progress.value()==self.media.duration():
+                        self.media_player()
         
         def manually_changed(self, pos):
                 if self.check==1:
@@ -145,15 +150,24 @@ class MainWindow(QMainWindow):
         def open_file(self):
                 self.filename, adress = QFileDialog.getOpenFileName(self, filter='*.mp3 *.pcm *.wav *.aiff *.acc *.m4a *.amv *.ogg *.wma *.flac *.alac')
                 if self.filename:
+                        self.play_or_pause = 0
                         self.media.setSource(QUrl.fromLocalFile(self.filename))
-                        media_second = (self.media.duration()//1000)
-                        self.right_time_label.setText(f'{media_second//60}:{media_second%60}')
+                        if self.media.duration()==0:
+                                return
+                        minute = (self.media.duration()//1000)//60
+                        second = (self.media.duration()//1000)%60
+                        if second<10:
+                                self.right_time_label.setText(f"{minute}:0{second}")
+                        else:
+                                self.right_time_label.setText(f"{minute}:{second}")
 
                         metadata = QMediaMetaData(self.media.metaData())
                         album_name = metadata.value(QMediaMetaData.Key.Title)
                         artist_name =  metadata.value(QMediaMetaData.Key.AlbumArtist)
                         genre = metadata.value(QMediaMetaData.Key.Genre)
 
+                        if album_name is None:
+                                album_name = 'Unknown'
                         if artist_name is None:
                                 artist_name = 'Unknown'
                         if genre is None:
@@ -163,6 +177,7 @@ class MainWindow(QMainWindow):
                         self.media_name_label.setText(album_name)
                         self.media_properties_label.setText(text)
 
+                        self.play_pause_button.setIcon(QIcon('play_button.png'))
                         self.play_pause_button.setDisabled(False)
                         self.progress.setDisabled(False)
                         self.progress.setMinimum(0)
