@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QSlider, QLabel, QHBoxLayout, QFileDialog
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaMetaData
-from PyQt6.QtCore import QUrl, QElapsedTimer, Qt, QSize
-from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFont, QPixmap
+from PyQt6.QtCore import QUrl, Qt, QSize
+from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFont
 
 class MainWindow(QMainWindow):
         def __init__(self):
@@ -34,8 +34,7 @@ class MainWindow(QMainWindow):
                         margin: {height // 4}px 0;
                         }}'''
                 
-                self.c = 0
-                self.minute = 0
+                self.check = 0
                 self.pause_time = 0
                 self.play_or_pause = 0
                 self.setWindowTitle("Music Player")
@@ -51,6 +50,8 @@ class MainWindow(QMainWindow):
                 self.progress = QSlider(orientation=Qt.Orientation.Horizontal)
                 self.progress.setStyleSheet(slider_style)
                 self.progress.setDisabled(True)
+                self.progress.sliderPressed.connect(self.pause)
+                self.progress.sliderReleased.connect(self.play)
 
                 self.media_name_label = QLabel()
                 self.media_name_label.setStyleSheet('font-size: 40px; font-weight: bold')
@@ -69,7 +70,6 @@ class MainWindow(QMainWindow):
                 h1_layout = QHBoxLayout()
                 h2_layout = QHBoxLayout()
                 container = QWidget()
-                self.timer = QElapsedTimer()
 
                 self.play_pause_button.pressed.connect(self.media_player)
 
@@ -106,38 +106,48 @@ class MainWindow(QMainWindow):
                 self.audio.setVolume(10)
                 self.media.setAudioOutput(self.audio)
                 self.media.positionChanged.connect(self.progress_bar)
+                self.progress.valueChanged.connect(self.manually_changed)
+
+        def pause(self, x = ''):
+                if x!='No':
+                        self.check = 1
+                self.media.pause()
+                self.pause_time = int(self.left_time_label.text()[-2:])
+
+        def play(self):
+                self.check = 0
+                self.media.play()
 
         def media_player(self):
                 if self.play_or_pause==0:
-                        self.media.play()
-                        self.timer.restart()
+                        self.play()
                         self.play_or_pause = 1
                         self.play_pause_button.setIcon(QIcon('pause_button.png'))
                 else:
-                        self.media.pause()
-                        self.pause_time = int(self.left_time_label.text()[-2:])
+                        self.pause('No')
                         self.play_or_pause = 0
                         self.play_pause_button.setIcon(QIcon('play_button.png'))
 
         def progress_bar(self):
-                duration = self.timer.elapsed()//1000 + self.pause_time
-                if duration<10:
-                        self.left_time_label.setText(f"{self.minute}:0{duration}")
-                elif duration>=10 and duration<=59:
-                        self.left_time_label.setText(f"{self.minute}:{duration}")
+                minute = (self.media.position()//1000)//60
+                second = (self.media.position()//1000)%60
+                if second<10:
+                        self.left_time_label.setText(f"{minute}:0{second}")
                 else:
-                        self.minute += 1
-                        self.timer.restart()
-                        duration = self.pause_time = 0
-                        self.left_time_label.setText(f"{self.minute}:0{duration}")
+                        self.left_time_label.setText(f"{minute}:{second}")
                 self.progress.setValue(self.media.position())
+        
+        def manually_changed(self, pos):
+                if self.check==1:
+                        self.media.setPosition(pos)
+                        self.progress_bar()
 
         def open_file(self):
                 self.filename, adress = QFileDialog.getOpenFileName(self, filter='*.mp3 *.pcm *.wav *.aiff *.acc *.m4a *.amv *.ogg *.wma *.flac *.alac')
                 if self.filename:
                         self.media.setSource(QUrl.fromLocalFile(self.filename))
-                        media_duration = (self.media.duration()//1000)
-                        self.right_time_label.setText(f'{media_duration//60}:{media_duration%60}')
+                        media_second = (self.media.duration()//1000)
+                        self.right_time_label.setText(f'{media_second//60}:{media_second%60}')
 
                         metadata = QMediaMetaData(self.media.metaData())
                         album_name = metadata.value(QMediaMetaData.Key.Title)
