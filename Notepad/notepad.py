@@ -2,6 +2,8 @@ from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTextEdit, QMessageBox
 from PyQt6.QtGui import QAction, QKeySequence, QCloseEvent, QIcon
 from PyQt6.QtPrintSupport import QPrintDialog, QPrinter
+from qfluentwidgets import FluentIcon, Icon, Theme, setTheme
+import darkdetect
 
 class MainWindow(QMainWindow):
         def __init__(self):
@@ -21,10 +23,12 @@ class MainWindow(QMainWindow):
                 open_action.triggered.connect(self.open_file)
 
                 save_action = QAction('Save', self)
+                save_action.setIcon(Icon(FluentIcon.SAVE))
                 save_action.setShortcut(QKeySequence('Ctrl+s'))
                 save_action.triggered.connect(self.save_file)
 
                 save_as_action = QAction('Save as', self)
+                save_as_action.setIcon(Icon(FluentIcon.SAVE_AS))
                 save_as_action.setShortcut(QKeySequence('Ctrl+Shift+s'))
                 save_as_action.triggered.connect(lambda: self.save_file(para='save_as'))
 
@@ -33,14 +37,17 @@ class MainWindow(QMainWindow):
                 exit_action.triggered.connect(self.closeEvent)
 
                 self.cut_action = QAction('Cut', self)
+                self.cut_action.setIcon(Icon(FluentIcon.CUT))
                 self.cut_action.setShortcut(QKeySequence('Ctrl+x'))
                 self.cut_action.triggered.connect(self.edit.cut)
 
                 self.copy_action = QAction('Copy', self)
+                self.copy_action.setIcon(Icon(FluentIcon.COPY))
                 self.copy_action.setShortcut(QKeySequence('Ctrl+c'))
                 self.copy_action.triggered.connect(self.edit.copy)
 
                 paste_action = QAction('Paste', self)
+                paste_action.setIcon(Icon(FluentIcon.PASTE))
                 paste_action.setShortcut(QKeySequence('Ctrl+v'))
                 paste_action.triggered.connect(self.edit.paste)
 
@@ -49,6 +56,7 @@ class MainWindow(QMainWindow):
                 select_all_action.triggered.connect(self.edit.selectAll)
 
                 print_action = QAction('Print', self)
+                print_action.setIcon(Icon(FluentIcon.PRINT))
                 print_action.setShortcut(QKeySequence('Ctrl+p'))
                 print_action.triggered.connect(self.print_out)
 
@@ -70,11 +78,18 @@ class MainWindow(QMainWindow):
                 edit_menu.addAction(select_all_action)
 
         def open_file(self):
-                self.filename, adress = QFileDialog.getOpenFileName(self)
-                if self.filename:
+                button = self.file_content_changed()
+                if button==QMessageBox.StandardButton.Save:
+                        return self.save_file()
+                elif button==QMessageBox.StandardButton.Cancel:
+                        return
+                        
+                filename, adress = QFileDialog.getOpenFileName(self)
+                if filename:
+                        self.filename = filename
                         self.f_name = self.filename.split('/')[-1]
                         try:
-                                with open(self.filename, 'r',) as f:
+                                with open(self.filename, 'r') as f:
                                         self.data = f.read()
                                 self.check = 0
                                 self.edit.setText(self.data)
@@ -82,7 +97,8 @@ class MainWindow(QMainWindow):
                                 self.copy_name = self.filename
                         except UnicodeDecodeError:
                                 file_extension = self.f_name.split('.')[-1].upper()
-                                QMessageBox.warning(self, 'Invalid file format', f'Cannot open a {file_extension} file.')
+                                warning = f"a {file_extension}" if file_extension[0] not in 'AEIOU' else f"an {file_extension}"
+                                QMessageBox.warning(self, 'Invalid file format', f'Cannot open {warning} file.')
                                 self.filename = self.copy_name
                                 self.f_name = self.filename.split('/')[-1]
                                 return
@@ -106,23 +122,31 @@ class MainWindow(QMainWindow):
                 dialog.exec()
 
         def closeEvent(self, event: QCloseEvent):
-                if self.data!=self.edit.toPlainText() and self.filename:
-                        button = QMessageBox.question(self, 'Save changes', f'Do you want to save changes to {self.f_name}?', 
-                                                     buttons= QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
-                elif self.filename=='' and self.edit.toPlainText():
-                        button = QMessageBox.question(self, 'Save changes', 'Do you want to save changes?', 
-                                                     buttons= QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
-                else:
-                        return QCoreApplication.exit()
+                button = self.file_content_changed(True)
+                
                 if button==QMessageBox.StandardButton.Save:
-                        self.save_file()
+                        return self.save_file()
                 elif button==QMessageBox.StandardButton.Discard:
                         return QCoreApplication.exit()
                 event.ignore()
 
+        def file_content_changed(self, CloseEvent = False):
+                if self.data!=self.edit.toPlainText() and self.filename:
+                        return QMessageBox.question(self, 'Save changes', f'Do you want to save changes to {self.f_name}?', 
+                                                     buttons= QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard
+                                                     | QMessageBox.StandardButton.Cancel)
+                elif self.filename=='' and self.edit.toPlainText():
+                        return QMessageBox.question(self, 'Save changes', 'Do you want to save changes?', 
+                                                     buttons= QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard
+                                                     | QMessageBox.StandardButton.Cancel)
+                elif CloseEvent:
+                        return QCoreApplication.exit()
+
 if __name__=='__main__':    
         app = QApplication([])
-        app.setStyle('Fusion')
+        if(darkdetect.isDark()):
+                app.setStyle('Fusion')
+                setTheme(Theme.DARK)
         window = MainWindow()
         window.show()
         app.exec()
