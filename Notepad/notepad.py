@@ -1,8 +1,9 @@
-from PyQt6.QtCore import QCoreApplication
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTextEdit, QMessageBox
-from PyQt6.QtGui import QAction, QKeySequence, QCloseEvent, QIcon
+from PyQt6.QtCore import QCoreApplication, QDate
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTextEdit, QMessageBox, QLabel
+from PyQt6.QtGui import QAction, QKeySequence, QCloseEvent, QIcon, QFont, QFontDatabase
 from PyQt6.QtPrintSupport import QPrintDialog, QPrinter
 from qfluentwidgets import FluentIcon, Icon, Theme, setTheme
+from qframelesswindow import FramelessDialog
 import darkdetect
 
 class MainWindow(QMainWindow):
@@ -60,6 +61,9 @@ class MainWindow(QMainWindow):
                 print_action.setShortcut(QKeySequence('Ctrl+p'))
                 print_action.triggered.connect(self.print_out)
 
+                about_action = QAction("About", self)
+                about_action.triggered.connect(self.about)
+
                 menu = self.menuBar()
 
                 file_menu = menu.addMenu('File')
@@ -76,6 +80,9 @@ class MainWindow(QMainWindow):
                 edit_menu.addAction(paste_action)
                 edit_menu.addSeparator()
                 edit_menu.addAction(select_all_action)
+
+                help_menu = menu.addMenu("Help")
+                help_menu.addAction(about_action)
 
         def open_file(self):
                 button = self.file_content_changed()
@@ -141,12 +148,26 @@ class MainWindow(QMainWindow):
                                                      | QMessageBox.StandardButton.Cancel)
                 elif CloseEvent:
                         return QCoreApplication.exit()
+                
+        def about(self):
+            color = "cyan" if theme=="dark" else "red"
+            current_date = QDate.currentDate()
+            dialog = FramelessDialog(self)
+            dialog.setFixedSize(350, 170)
+            about_label = QLabel("About Music Player\n", dialog)
+            about_label.setGeometry(18, 30, len(about_label.text())*20, about_label.height())
+            about_label.setStyleSheet(f"font-size: 25px; color: {color}; text-decoration: underline")
+            QLabel(f"\n\n\n\n     Copyright © {current_date.year()} AnkurMal.", dialog)
+            QLabel("\n\n\n\n\n     All rights reserved.", dialog)
+            dialog.exec()
 
-if __name__=='__main__':    
-        app = QApplication([])
-        if(darkdetect.isDark()):
-                app.setStyle('Fusion')
-                setTheme(Theme.DARK)
-        window = MainWindow()
-        window.show()
-        app.exec()
+if __name__=='__main__': 
+    theme = "light"
+    app = QApplication([])
+    if(darkdetect.isDark()):
+        app.setStyle('Fusion')
+        setTheme(Theme.DARK)
+        theme = "dark"      
+    window = MainWindow()
+    window.show()
+    app.exec()
