@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
             current_date = QDate.currentDate()
             dialog = FramelessDialog(self)
             dialog.setFixedSize(350, 170)
-            about_label = QLabel("About Music Player\n", dialog)
+            about_label = QLabel("About Notepad\n", dialog)
             about_label.setGeometry(18, 30, len(about_label.text())*20, about_label.height())
             about_label.setStyleSheet(f"font-size: 25px; color: {color}; text-decoration: underline")
             QLabel(f"\n\n\n\n     Copyright © {current_date.year()} AnkurMal.", dialog)
