@@ -1,9 +1,7 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QSlider, QLabel, QHBoxLayout, QFileDialog
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QSlider, QLabel, QHBoxLayout, QFileDialog, QDialog
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaMetaData
 from PyQt6.QtCore import QUrl, Qt, QSize, QDate
 from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFont, QFontDatabase
-from qfluentwidgets import setTheme, Theme
-from qframelesswindow import FramelessDialog
 import darkdetect, sys
 
 class MainWindow(QMainWindow):
@@ -191,7 +189,7 @@ class MainWindow(QMainWindow):
 	def about(self):
 		color = "cyan" if theme=="light" else "red"
 		current_date = QDate.currentDate()
-		dialog = FramelessDialog(self)
+		dialog = QDialog(self)
 		dialog.setFixedSize(350, 170)
 		about_label = QLabel("About Music Player", dialog)
 		about_label.setGeometry(18, 30, len(about_label.text())*20, about_label.height())
@@ -205,7 +203,6 @@ if __name__ == "__main__":
 	app = QApplication(sys.argv)
 	if(darkdetect.isDark()):
 		app.setStyle('Fusion')
-		setTheme(Theme.DARK)
 		theme = "light"
 	id = QFontDatabase.addApplicationFont("font/edge.ttf")
 	families = QFontDatabase.applicationFontFamilies(id)
